@@ -88,12 +88,12 @@ export default async function handler(
   }
 
   try {
-    const form = formidable();
+    const form = formidable({ multiples: true });
     const [fields, files] = await form.parse(req);
 
-    const file = files.image?.[0];
-    if (!file) {
-      return res.status(400).json({ error: "No image file provided" });
+    const imageFiles = files.image as formidable.File[];
+    if (!imageFiles || imageFiles.length === 0) {
+      return res.status(400).json({ error: "No image files provided" });
     }
 
     const width = parseInt(fields.width?.[0] || "0");
@@ -104,20 +104,18 @@ export default async function handler(
       100
     );
 
-    const processedImage = await processImage(
-      file,
-      width,
-      height,
-      format,
-      quality
+    const processedImages = await Promise.all(
+      imageFiles.map((file) =>
+        processImage(file, width, height, format, quality)
+      )
     );
 
     res.status(200).json({
-      message: "Image processed successfully",
-      image: processedImage,
+      message: "Images processed successfully",
+      images: processedImages,
     });
   } catch (error) {
-    console.error("Error processing image:", error);
-    res.status(500).json({ error: "Error processing image" });
+    console.error("Error processing images:", error);
+    res.status(500).json({ error: "Error processing images" });
   }
 }
