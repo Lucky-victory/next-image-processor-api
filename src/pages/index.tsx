@@ -3,11 +3,18 @@ import Image from "next/image";
 import { Inter } from "next/font/google";
 import styles from "@/styles/Home.module.css";
 import { useState, useRef, useEffect } from "react";
+import { motion } from "framer-motion";
+import { BeatLoader } from "react-spinners";
+import { Swiper, SwiperSlide } from "swiper/react";
+import axios from "axios";
 
 const inter = Inter({ subsets: ["latin"] });
 
 export default function Home() {
-  const [image, setImage] = useState<File | null>(null);
+  const [images, setImages] = useState<File[]>([]);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [width, setWidth] = useState<number>(0);
   const [height, setHeight] = useState<number>(0);
   const [format, setFormat] = useState<string>("jpeg");
@@ -20,43 +27,51 @@ export default function Home() {
   const sliderRef = useRef<HTMLDivElement>(null);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      setImage(file);
-      setOriginalImageUrl(URL.createObjectURL(file));
-    }
+    const files = Array.from(event.target.files || []);
+    setImages((prevImages) => [...prevImages, ...files]);
+    setCurrentImageIndex(images.length);
   };
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!image) {
-      setError("Please select an image");
+    if (images.length === 0) {
+      setError("Please select at least one image");
       return;
     }
 
+    setIsProcessing(true);
+    setUploadProgress(0);
+
     const formData = new FormData();
-    formData.append("image", image);
+    formData.append("image", images[currentImageIndex]);
     formData.append("width", width.toString());
     formData.append("height", height.toString());
     formData.append("format", format);
     formData.append("quality", quality.toString());
 
     try {
-      const response = await fetch("/api/image-processor", {
-        method: "POST",
-        body: formData,
+      const response = await axios.post("/api/image-processor", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+        onUploadProgress: (progressEvent) => {
+          const progress =
+            (progressEvent.loaded / (progressEvent.total ?? 1)) * 100;
+          setUploadProgress(progress);
+        },
       });
-
-      if (!response.ok) {
+      if (response.status !== 200) {
         throw new Error("Failed to process image");
       }
 
-      const result = await response.json();
-      setProcessedImage(result.image);
+      setProcessedImage(response.data.image);
       setError(null);
     } catch (err) {
       setError("Error processing image");
       console.error(err);
+    } finally {
+      setIsProcessing(false);
+      setUploadProgress(0);
     }
   };
 
@@ -108,7 +123,7 @@ export default function Home() {
         <form onSubmit={handleSubmit} className={styles.form}>
           <div className={styles.inputGroup}>
             <label htmlFor="file" className={styles.label}>
-              Select Image:
+              Select Images:
             </label>
             <input
               type="file"
@@ -116,6 +131,7 @@ export default function Home() {
               accept="image/*"
               onChange={handleFileChange}
               className={styles.fileInput}
+              multiple
             />
           </div>
           <div className={styles.inputGroup}>
@@ -171,11 +187,39 @@ export default function Home() {
               className={styles.input}
             />
           </div>
-          <button type="submit" className={styles.button}>
-            Process Image
-          </button>
+          <motion.button
+            type="submit"
+            className={styles.button}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            disabled={isProcessing}
+          >
+            {isProcessing ? (
+              <BeatLoader color="#ffffff" size={10} />
+            ) : (
+              "Process Image"
+            )}
+          </motion.button>
         </form>
+        {uploadProgress > 0 && <progress value={uploadProgress} max="100" />}
         {error && <p className={styles.error}>{error}</p>}
+        {images.length > 0 && (
+          <Swiper
+            spaceBetween={10}
+            slidesPerView={4}
+            onSlideChange={(swiper) => setCurrentImageIndex(swiper.activeIndex)}
+          >
+            {images.map((image, index) => (
+              <SwiperSlide key={index}>
+                <img
+                  src={URL.createObjectURL(image)}
+                  alt={`Thumbnail ${index + 1}`}
+                  className={styles.thumbnail}
+                />
+              </SwiperSlide>
+            ))}
+          </Swiper>
+        )}
         {processedImage && originalImageUrl && (
           <div className={styles.result}>
             <h2>Image Comparison:</h2>
