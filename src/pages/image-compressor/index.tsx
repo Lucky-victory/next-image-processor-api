@@ -46,6 +46,7 @@ import { motion } from "framer-motion";
 import Navbar from "@/components/Navbar";
 import PageWrapper from "@/components/PageWrapper";
 import axios from "axios";
+import DownloadImages from "@/components/DownloadImages";
 
 const BackgroundBlob = ({
   top,
@@ -74,6 +75,7 @@ const BackgroundBlob = ({
 
 export default function Home() {
   const [images, setImages] = useState<File[]>([]);
+  const [processId, setProcessId] = useState("");
   const [quality, setQuality] = useState<number>(70);
   const [width, setWidth] = useState<string>("");
   const [height, setHeight] = useState<string>("");
@@ -137,6 +139,7 @@ export default function Home() {
 
       const result = await response.data;
       setProcessedImages(result.images);
+      setProcessId(result.id);
       setError(null);
     } catch (err) {
       setError("Error processing images");
@@ -162,7 +165,7 @@ export default function Home() {
   };
 
   const handlePreview = (image: any) => {
-    setPreviewImage(`/processed/${image.filename}`);
+    setPreviewImage(`/processed/${processId}/${image.filename}`);
     onOpen();
   };
 
@@ -354,16 +357,8 @@ export default function Home() {
                 w={{ base: "full" }}
                 mx={"auto"}
               >
-                <Button
-                  onClick={handleDownloadAll}
-                  colorScheme="blue"
-                  alignSelf={"flex-end"}
-                  rounded={"full"}
-                  width={{ base: "100%", md: "200px" }}
-                  leftIcon={<LuDownload />}
-                >
-                  Download All
-                </Button>
+              
+                <DownloadImages id={processId} />
                 {processedImages.map((image, index) => (
                   <HStack
                     w={"full"}
@@ -377,7 +372,7 @@ export default function Home() {
                   >
                     <HStack>
                       <Image
-                        src={"/processed/" + image.filename}
+                        src={`/processed/${processId}/${image.filename}`}
                         alt={`Thumbnail ${index + 1}`}
                         objectFit="cover"
                         boxSize="50px"
