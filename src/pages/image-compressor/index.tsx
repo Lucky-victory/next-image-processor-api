@@ -47,6 +47,7 @@ import Navbar from "@/components/Navbar";
 import PageWrapper from "@/components/PageWrapper";
 import axios from "axios";
 import DownloadImages from "@/components/DownloadImages";
+import DownloadImage from "@/components/DownloadImage";
 
 const BackgroundBlob = ({
   top,
@@ -140,6 +141,7 @@ export default function Home() {
       const result = await response.data;
       setProcessedImages(result.images);
       setProcessId(result.id);
+      setImages([]);
       setError(null);
     } catch (err) {
       setError("Error processing images");
@@ -158,12 +160,14 @@ export default function Home() {
     document.body.removeChild(link);
   };
 
-  const handleDownloadAll = () => {
-    processedImages.forEach((image) => {
-      handleDownload(image);
+  const handleRemoveImage = (index: number) => {
+    setImages((prevImages) => prevImages.filter((_, i) => i !== index));
+    setUploadProgress((prev) => {
+      const newProgress = { ...prev };
+      delete newProgress[images[index].name];
+      return newProgress;
     });
   };
-
   const handlePreview = (image: any) => {
     setPreviewImage(`/processed/${processId}/${image.filename}`);
     onOpen();
@@ -276,7 +280,17 @@ export default function Home() {
                       Upload Image
                     </Button>
                   </motion.div>
-                  <Text>or drop some images</Text>
+                  <Text as={"span"} color={"gray.600"}>
+                    or drop some images
+                  </Text>
+                  <Text
+                    as={"span"}
+                    fontSize={"small"}
+                    color={"gray.600"}
+                    fontWeight={500}
+                  >
+                    (max 50MB)
+                  </Text>
                 </VStack>
               )}
             </Stack>
@@ -357,8 +371,12 @@ export default function Home() {
                 w={{ base: "full" }}
                 mx={"auto"}
               >
-              
-                <DownloadImages id={processId} />
+                <DownloadImages
+                  id={processId}
+                  onSuccess={() => {
+                    setProcessedImages([]);
+                  }}
+                />
                 {processedImages.map((image, index) => (
                   <HStack
                     w={"full"}
@@ -382,7 +400,7 @@ export default function Home() {
                     </HStack>
                     <HStack gap={1}>
                       <Tag
-                        colorScheme="gray"
+                        colorScheme="red"
                         rounded={"full"}
                         size={{ base: "sm", lg: "md" }}
                       >
@@ -400,14 +418,7 @@ export default function Home() {
                       </Tag>
                     </HStack>
                     <HStack>
-                      <Button
-                        onClick={() => handleDownload(image)}
-                        size="sm"
-                        colorScheme="blue"
-                        rounded={"full"}
-                      >
-                        Download
-                      </Button>
+                      <DownloadImage id={processId} filename={image.filename} />
                       <Button
                         onClick={() => handlePreview(image)}
                         size="sm"
@@ -457,11 +468,21 @@ export default function Home() {
                       color="blue.500"
                     >
                       <CircularProgressLabel>
-                        {uploadProgress[image.name] > 0 &&
-                          uploadProgress[image.name] + "%"}
+                        {uploadProgress[image.name] + "%"}
                       </CircularProgressLabel>
                     </CircularProgress>
                     <Text>{(image.size / 1024).toFixed(2)} KB</Text>
+                    <IconButton
+                      aria-label="remove image"
+                      colorScheme="red"
+                      size={"xs"}
+                      rounded={"full"}
+                      onClick={() => {
+                        handleRemoveImage(index);
+                      }}
+                    >
+                      <LuX />
+                    </IconButton>
                   </HStack>
                 ))}
               </VStack>

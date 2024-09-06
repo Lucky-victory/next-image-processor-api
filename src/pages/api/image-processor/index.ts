@@ -7,7 +7,8 @@ import { v4 as uuid } from "uuid";
 
 export const config = {
   api: {
-    bodyParser: false,size: 10 * 1024 * 1024, // 10MB
+    bodyParser: false,
+    size: 50 * 1024 * 1024, // 50MB
   },
 };
 

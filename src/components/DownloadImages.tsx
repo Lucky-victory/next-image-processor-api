@@ -3,7 +3,10 @@ import axios from "axios";
 import { saveAs } from "file-saver";
 import { LuDownload } from "react-icons/lu";
 
-const DownloadImages: React.FC<{ id: string }> = ({ id }) => {
+const DownloadImages: React.FC<{ id: string; onSuccess?: () => void }> = ({
+  id,
+  onSuccess = () => {},
+}) => {
   const handleDownload = async () => {
     try {
       const response = await axios.get(`/api/download-zip?id=${id}`, {
@@ -11,6 +14,7 @@ const DownloadImages: React.FC<{ id: string }> = ({ id }) => {
       });
       const blob = new Blob([response.data], { type: "application/zip" });
       saveAs(blob, `${id}.zip`);
+      onSuccess();
     } catch (error) {
       console.error("Failed to download ZIP file", error);
     }
