@@ -18,6 +18,10 @@ export default async function handler(
 ) {
   const zip = new JSZip();
   const { id } = req.query;
+  if (!id) {
+    res.status(400).json({ error: "Missing id parameter" });
+    return;
+  }
   const folderPath = path.join("public", "processed", id as string);
   try {
     const files = getFilesInFolder(folderPath);
@@ -28,13 +32,10 @@ export default async function handler(
       zip.file(file.name, fileContent); // Add the file as binary data
     });
 
-    // Generate the ZIP file and send it as a response
-    zip.generateAsync({ type: "nodebuffer" }).then((content) => {
-      res.setHeader("Content-Type", "application/zip");
-      res.setHeader("Content-Disposition", `attachment; filename='${id}.zip'`);
-      res.status(200).send(content);
-      res.end();
-    });
+    const content = await zip.generateAsync({ type: "nodebuffer" });
+    res.setHeader("Content-Type", "application/zip");
+    res.setHeader("Content-Disposition", `attachment; filename='${id}.zip'`);
+    res.status(200).send(content);
   } catch (error: any) {
     res
       .status(500)

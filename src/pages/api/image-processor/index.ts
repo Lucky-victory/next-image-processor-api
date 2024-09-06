@@ -49,10 +49,11 @@ const processImage = async (
     default:
       throw new Error("Unsupported format");
   }
-
-  const outputFilename = `processed-${Date.now()}.${format}`;
+  const outputFilename = `compressed-${file.originalFilename?.replace(
+    /\.[^/.]+$/,
+    ""
+  )}.${format}`;
   const outputPath = path.join(outputDir, outputFilename);
-
   await sharpImage.toFile(outputPath);
 
   const newSize = (await fs.stat(outputPath)).size;

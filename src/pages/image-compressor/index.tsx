@@ -34,11 +34,13 @@ import {
   ModalBody,
   useDisclosure,
   Icon,
+  useToast,
 } from "@chakra-ui/react";
 import {
   LuArrowBigRight,
   LuArrowRight,
   LuDownload,
+  LuTrash,
   LuUpload,
   LuX,
 } from "react-icons/lu";
@@ -48,55 +50,56 @@ import PageWrapper from "@/components/PageWrapper";
 import axios from "axios";
 import DownloadImages from "@/components/DownloadImages";
 import DownloadImage from "@/components/DownloadImage";
-
-const BackgroundBlob = ({
-  top,
-  left,
-  size,
-  color,
-}: {
-  top: string;
-  left: string;
-  size: string;
-  color: string;
-}) => (
-  <Box
-    position="absolute"
-    top={top}
-    left={left}
-    width={size}
-    height={size}
-    borderRadius="full"
-    bg={color}
-    filter="blur(70px)"
-    opacity={0.6}
-    zIndex={-1}
-  />
-);
+import ProcessedImageItem from "@/components/ProcessedImageItem";
+import ImagePreviewModal from "@/components/ImagePreviewModal";
+import BackgroundBlob from "@/components/BackgroundBlob";
+import PageHeading from "@/components/PageHeading";
 
 export default function Home() {
   const [images, setImages] = useState<File[]>([]);
   const [processId, setProcessId] = useState("");
-  const [quality, setQuality] = useState<number>(70);
+  const [quality, setQuality] = useState<number>(50);
   const [width, setWidth] = useState<string>("");
   const [height, setHeight] = useState<string>("");
   const [processedImages, setProcessedImages] = useState<any[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const toast = useToast();
   const [uploadProgress, setUploadProgress] = useState<{
     [key: string]: number;
   }>({});
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const { isOpen, onOpen, onClose } = useDisclosure();
 
-  const onDrop = useCallback((acceptedFiles: File[]) => {
-    setImages((prevImages) => [...prevImages, ...acceptedFiles]);
-    acceptedFiles.forEach((file) => {
-      setUploadProgress((prev) => ({ ...prev, [file.name]: 0 }));
-    });
-  }, []);
+  const onDrop = useCallback(
+    (acceptedFiles: File[], rejectedFiles: any[]) => {
+      const imageFiles = acceptedFiles.filter((file) =>
+        file.type.startsWith("image/")
+      );
+      setImages((prevImages) => [...prevImages, ...imageFiles]);
+      imageFiles.forEach((file) => {
+        setUploadProgress((prev) => ({ ...prev, [file.name]: 0 }));
+      });
 
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop });
+      if (rejectedFiles.length > 0) {
+        toast({
+          title: "Unsupported file(s)",
+          description: "Only image files are allowed.",
+          status: "error",
+          duration: 3000,
+          isClosable: true,
+        });
+      }
+    },
+    [toast]
+  );
+
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop,
+    accept: {
+      "image/*": [],
+    },
+  });
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -141,7 +144,7 @@ export default function Home() {
       const result = await response.data;
       setProcessedImages(result.images);
       setProcessId(result.id);
-      setImages([]);
+
       setError(null);
     } catch (err) {
       setError("Error processing images");
@@ -149,15 +152,6 @@ export default function Home() {
     } finally {
       setIsProcessing(false);
     }
-  };
-
-  const handleDownload = (image: any) => {
-    const link = document.createElement("a");
-    link.href = `/processed/${image.filename}`;
-    link.download = image.filename;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
   };
 
   const handleRemoveImage = (index: number) => {
@@ -168,8 +162,16 @@ export default function Home() {
       return newProgress;
     });
   };
+
   const handlePreview = (image: any) => {
-    setPreviewImage(`/processed/${processId}/${image.filename}`);
+    const originalImage = images.find(
+      (img) => img.name === image.originalFilename
+    );
+    if (originalImage) {
+      setPreviewImage(URL.createObjectURL(originalImage));
+    } else {
+      setPreviewImage(`/processed/${processId}/${image.filename}`);
+    }
     onOpen();
   };
 
@@ -182,60 +184,7 @@ export default function Home() {
         <BackgroundBlob top="80%" left="20%" size="350px" color="pink.300" />
         <Container maxW="container.xl" py={8} position="relative" zIndex={1}>
           <VStack spacing={8}>
-            <Heading as="h1" size="xl">
-              Free online
-              <Box
-                position="relative"
-                display="inline-block"
-                border="2px dotted"
-                borderColor="gray.400"
-                p={2}
-              >
-                <Text fontSize="3xl" fontWeight="bold" color={"teal"}>
-                  Image Compressor
-                </Text>
-                <Box
-                  position="absolute"
-                  top="-4px"
-                  left="-4px"
-                  w="8px"
-                  h="8px"
-                  bg="white"
-                  border="2px solid"
-                  borderColor="gray.400"
-                />
-                <Box
-                  position="absolute"
-                  top="-4px"
-                  right="-4px"
-                  w="8px"
-                  h="8px"
-                  bg="white"
-                  border="2px solid"
-                  borderColor="gray.400"
-                />
-                <Box
-                  position="absolute"
-                  bottom="-4px"
-                  left="-4px"
-                  w="8px"
-                  h="8px"
-                  bg="white"
-                  border="2px solid"
-                  borderColor="gray.400"
-                />
-                <Box
-                  position="absolute"
-                  bottom="-4px"
-                  right="-4px"
-                  w="8px"
-                  h="8px"
-                  bg="white"
-                  border="2px solid"
-                  borderColor="gray.400"
-                />
-              </Box>
-            </Heading>
+            <PageHeading title="Free online" />
             <Text>
               Compress images with one click, reduce image size{" "}
               <Text as={"strong"}>without losing image quality</Text>
@@ -244,7 +193,7 @@ export default function Home() {
               {...getRootProps()}
               w="full"
               p={6}
-              maxW={800}
+              maxW={900}
               h={{ base: 150, md: 200 }}
               border="2px dashed"
               borderColor={isDragActive ? "blue.500" : "gray.300"}
@@ -294,71 +243,75 @@ export default function Home() {
                 </VStack>
               )}
             </Stack>
-            <form onSubmit={handleSubmit} style={{ width: "100%" }}>
-              <VStack
-                spacing={4}
-                align="stretch"
-                bg={"white"}
-                rounded={"xl"}
-                p={4}
-                maxW={800}
-                mx={"auto"}
-              >
-                <Stack direction={{ base: "column", md: "row" }} spacing={4}>
-                  <FormControl>
-                    <FormLabel>Width</FormLabel>
-                    <InputGroup>
-                      <Input
-                        type="number"
-                        value={width}
-                        onChange={(e) => setWidth(e.target.value)}
-                        placeholder="Width"
-                      />
-                      <InputRightAddon>px</InputRightAddon>
-                    </InputGroup>
-                  </FormControl>
-                  <FormControl>
-                    <FormLabel>Height</FormLabel>
-                    <InputGroup>
-                      <Input
-                        type="number"
-                        value={height}
-                        onChange={(e) => setHeight(e.target.value)}
-                        placeholder="Height"
-                      />
-                      <InputRightAddon>px</InputRightAddon>
-                    </InputGroup>
-                  </FormControl>
-                  <FormControl>
-                    <FormLabel>Quality</FormLabel>
-                    <Slider
-                      value={quality}
-                      onChange={(value) => setQuality(value)}
-                      min={1}
-                      max={100}
-                      width="100%"
-                    >
-                      <SliderTrack>
-                        <SliderFilledTrack />
-                      </SliderTrack>
-                      <SliderThumb />
-                    </Slider>
-                    <Text textAlign="center">{quality}%</Text>
-                  </FormControl>
-                </Stack>
-                <Button
-                  alignSelf={"center"}
-                  type="submit"
-                  colorScheme="blue"
-                  rounded={"full"}
-                  isLoading={isProcessing}
-                  width={{ base: "100%", md: "200px" }}
-                  isDisabled={images.length === 0}
+            {!processedImages.length && (
+              <form onSubmit={handleSubmit} style={{ width: "100%" }}>
+                <VStack
+                  spacing={4}
+                  align="stretch"
+                  bg={"white"}
+                  rounded={"xl"}
+                  p={4}
+                  maxW={900}
+                  mx={"auto"}
                 >
-                  Compress
-                </Button>
-              </VStack>
-            </form>
+                  <Stack direction={{ base: "column", md: "row" }} spacing={4}>
+                    <FormControl>
+                      <FormLabel>Width</FormLabel>
+                      <InputGroup>
+                        <Input
+                          type="number"
+                          value={width}
+                          onChange={(e) => setWidth(e.target.value)}
+                          placeholder="Width"
+                        />
+                        <InputRightAddon>px</InputRightAddon>
+                      </InputGroup>
+                    </FormControl>
+                    <FormControl>
+                      <FormLabel>Height</FormLabel>
+                      <InputGroup>
+                        <Input
+                          type="number"
+                          value={height}
+                          onChange={(e) => setHeight(e.target.value)}
+                          placeholder="Height"
+                        />
+                        <InputRightAddon>px</InputRightAddon>
+                      </InputGroup>
+                    </FormControl>
+                    <FormControl>
+                      <FormLabel>Quality</FormLabel>
+                      <Slider
+                        value={quality}
+                        onChange={(value) => setQuality(value)}
+                        min={1}
+                        max={100}
+                        width="100%"
+                      >
+                        <SliderTrack>
+                          <SliderFilledTrack />
+                        </SliderTrack>
+                        <SliderThumb />
+                      </Slider>
+                      <Text textAlign="center">{quality}%</Text>
+                    </FormControl>
+                  </Stack>
+                  <Button
+                    alignSelf={"center"}
+                    type="submit"
+                    colorScheme="blue"
+                    rounded={"full"}
+                    isLoading={isProcessing}
+                    loadingText="Processing..."
+                    width={{ base: "100%", md: "250px" }}
+                    isDisabled={images.length === 0}
+                  >
+                    Compress
+                  </Button>
+                </VStack>
+              </form>
+            )}
+
             {processedImages.length > 0 && (
               <VStack
                 spacing={4}
@@ -367,68 +320,39 @@ export default function Home() {
                 bg={"white"}
                 rounded={"xl"}
                 p={4}
-                maxW={800}
+                maxW={900}
                 w={{ base: "full" }}
                 mx={"auto"}
               >
-                <DownloadImages
-                  id={processId}
-                  onSuccess={() => {
-                    setProcessedImages([]);
-                  }}
-                />
-                {processedImages.map((image, index) => (
-                  <HStack
-                    w={"full"}
-                    key={index}
-                    justify="space-between"
-                    align="center"
-                    p={2}
-                    bg="gray.100"
-                    borderRadius="lg"
-                    flexWrap={{ base: "wrap", md: "nowrap" }}
+                <HStack
+                  flexDir={{ base: "column", md: "row" }}
+                  alignSelf={"flex-end"}
+                >
+                  <Button
+                    rounded={"full"}
+                    colorScheme="red"
+                    leftIcon={<LuTrash />}
+                    onClick={() => {
+                      setProcessedImages([]);
+                    }}
                   >
-                    <HStack>
-                      <Image
-                        src={`/processed/${processId}/${image.filename}`}
-                        alt={`Thumbnail ${index + 1}`}
-                        objectFit="cover"
-                        boxSize="50px"
-                        borderRadius="md"
-                      />
-                      <Text as={"span"}>{image.filename}</Text>
-                    </HStack>
-                    <HStack gap={1}>
-                      <Tag
-                        colorScheme="red"
-                        rounded={"full"}
-                        size={{ base: "sm", lg: "md" }}
-                      >
-                        <Text as="s">
-                          {(image.originalSize / 1024).toFixed(2)} KB
-                        </Text>
-                      </Tag>{" "}
-                      <LuArrowBigRight size={14} />{" "}
-                      <Tag
-                        colorScheme="green"
-                        rounded={"full"}
-                        size={{ base: "sm", lg: "md" }}
-                      >
-                        {(image.newSize / 1024).toFixed(2)} KB
-                      </Tag>
-                    </HStack>
-                    <HStack>
-                      <DownloadImage id={processId} filename={image.filename} />
-                      <Button
-                        onClick={() => handlePreview(image)}
-                        size="sm"
-                        colorScheme="teal"
-                        rounded={"full"}
-                      >
-                        Preview
-                      </Button>
-                    </HStack>
-                  </HStack>
+                    Reset{" "}
+                  </Button>
+                  <DownloadImages
+                    id={processId}
+                    onSuccess={() => {
+                      setProcessedImages([]);
+                    }}
+                  />
+                </HStack>
+                {processedImages.map((image, index) => (
+                  <ProcessedImageItem
+                    key={index}
+                    image={image}
+                    index={index}
+                    processId={processId}
+                    handlePreview={handlePreview}
+                  />
                 ))}
               </VStack>
             )}
@@ -441,7 +365,7 @@ export default function Home() {
                 px={3}
                 py={4}
                 rounded={"xl"}
-                maxW={800}
+                maxW={900}
               >
                 {images.map((image, index) => (
                   <HStack
@@ -490,24 +414,19 @@ export default function Home() {
           </VStack>
         </Container>
       </Box>
-      <Modal isOpen={isOpen} onClose={onClose} size="xl">
-        <ModalOverlay />
-        <ModalContent>
-          <ModalHeader>Image Preview</ModalHeader>
-          <ModalCloseButton />
-          <ModalBody>
-            {previewImage && (
-              <Image
-                src={previewImage}
-                alt="Preview"
-                maxW="100%"
-                maxH="70vh"
-                mx="auto"
-              />
-            )}
-          </ModalBody>
-        </ModalContent>
-      </Modal>
+      <ImagePreviewModal
+        isOpen={isOpen}
+        onClose={onClose}
+        compressedImage={`/processed/${processId}/${
+          processedImages.find(
+            (img) =>
+              URL.createObjectURL(
+                images.find((origImg) => origImg.name === img.originalFilename)!
+              ) === previewImage
+          )?.filename
+        }`}
+        originalImage={previewImage!}
+      />
     </PageWrapper>
   );
 }
