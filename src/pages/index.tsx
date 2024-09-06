@@ -124,3 +124,14 @@ export default function Home() {
     </PageWrapper>
   );
 }
+// implement serversideprops to redirect to image-compressor page
+export async function getServerSideProps(context: any) {
+  const { req, res } = context;
+
+  return {
+    redirect: {
+      destination: "/image-compressor",
+      permanent: false,
+    },
+  };
+}

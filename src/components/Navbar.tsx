@@ -34,7 +34,7 @@ const Navbar: React.FC = () => {
       <Flex align="center" justify="space-between" wrap="wrap" px={4} py={3}>
         <Flex align="center" mr={5}>
           <Heading as="h1" size="lg" letterSpacing={"tighter"}>
-            Image Tools
+            <Link href={"/"}>Image Tools</Link>
           </Heading>
         </Flex>
 
