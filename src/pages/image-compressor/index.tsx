@@ -156,7 +156,6 @@ export default function Home() {
     }
     onOpen();
   };
-  console.log({ processedImages, previews: uploadedImagesRef.current });
 
   return (
     <PageWrapper>
