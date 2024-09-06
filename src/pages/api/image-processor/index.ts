@@ -14,6 +14,7 @@ export const config = {
 
 interface ProcessedImage {
   filename: string;
+  originalFilename: string;
   format: string;
   originalSize: number;
   newSize: number;
@@ -60,6 +61,7 @@ const processImage = async (
 
   return {
     filename: outputFilename,
+    originalFilename: file.originalFilename as string,
     format,
     originalSize,
     newSize,

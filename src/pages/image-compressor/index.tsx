@@ -1,20 +1,16 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { useDropzone } from "react-dropzone";
 import {
   Box,
   Button,
   Container,
-  Flex,
   FormControl,
   FormLabel,
-  Heading,
   Input,
   Slider,
   SliderTrack,
   SliderFilledTrack,
   SliderThumb,
-  Progress,
-  SimpleGrid,
   Text,
   VStack,
   Image,
@@ -23,33 +19,16 @@ import {
   IconButton,
   CircularProgress,
   CircularProgressLabel,
-  Tag,
   InputGroup,
   InputRightAddon,
-  Modal,
-  ModalOverlay,
-  ModalContent,
-  ModalHeader,
-  ModalCloseButton,
-  ModalBody,
   useDisclosure,
-  Icon,
   useToast,
 } from "@chakra-ui/react";
-import {
-  LuArrowBigRight,
-  LuArrowRight,
-  LuDownload,
-  LuTrash,
-  LuUpload,
-  LuX,
-} from "react-icons/lu";
+import { LuTrash, LuUpload, LuX } from "react-icons/lu";
 import { motion } from "framer-motion";
-import Navbar from "@/components/Navbar";
 import PageWrapper from "@/components/PageWrapper";
 import axios from "axios";
 import DownloadImages from "@/components/DownloadImages";
-import DownloadImage from "@/components/DownloadImage";
 import ProcessedImageItem from "@/components/ProcessedImageItem";
 import ImagePreviewModal from "@/components/ImagePreviewModal";
 import BackgroundBlob from "@/components/BackgroundBlob";
@@ -70,6 +49,7 @@ export default function Home() {
   }>({});
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const { isOpen, onOpen, onClose } = useDisclosure();
+  const uploadedImagesRef = useRef<{ [key: string]: string }>({});
 
   const onDrop = useCallback(
     (acceptedFiles: File[], rejectedFiles: any[]) => {
@@ -79,6 +59,7 @@ export default function Home() {
       setImages((prevImages) => [...prevImages, ...imageFiles]);
       imageFiles.forEach((file) => {
         setUploadProgress((prev) => ({ ...prev, [file.name]: 0 }));
+        uploadedImagesRef.current[file.name] = URL.createObjectURL(file);
       });
 
       if (rejectedFiles.length > 0) {
@@ -144,7 +125,7 @@ export default function Home() {
       const result = await response.data;
       setProcessedImages(result.images);
       setProcessId(result.id);
-
+      setImages([]);
       setError(null);
     } catch (err) {
       setError("Error processing images");
@@ -155,25 +136,27 @@ export default function Home() {
   };
 
   const handleRemoveImage = (index: number) => {
+    const removedImage = images[index];
     setImages((prevImages) => prevImages.filter((_, i) => i !== index));
     setUploadProgress((prev) => {
       const newProgress = { ...prev };
-      delete newProgress[images[index].name];
+      delete newProgress[removedImage.name];
       return newProgress;
     });
+    URL.revokeObjectURL(uploadedImagesRef.current[removedImage.name]);
+    delete uploadedImagesRef.current[removedImage.name];
   };
 
   const handlePreview = (image: any) => {
-    const originalImage = images.find(
-      (img) => img.name === image.originalFilename
-    );
+    const originalImage = uploadedImagesRef.current[image.originalFilename];
     if (originalImage) {
-      setPreviewImage(URL.createObjectURL(originalImage));
+      setPreviewImage(originalImage);
     } else {
       setPreviewImage(`/processed/${processId}/${image.filename}`);
     }
     onOpen();
   };
+  console.log({ processedImages, previews: uploadedImagesRef.current });
 
   return (
     <PageWrapper>
@@ -342,6 +325,8 @@ export default function Home() {
                     id={processId}
                     onSuccess={() => {
                       setProcessedImages([]);
+                      setImages([]);
+                      uploadedImagesRef.current = {};
                     }}
                   />
                 </HStack>
@@ -377,7 +362,7 @@ export default function Home() {
                     borderRadius="lg"
                   >
                     <Image
-                      src={URL.createObjectURL(image)}
+                      src={uploadedImagesRef.current[image.name]}
                       alt={`Thumbnail ${index + 1}`}
                       objectFit="cover"
                       boxSize="50px"
@@ -401,6 +386,7 @@ export default function Home() {
                       colorScheme="red"
                       size={"xs"}
                       rounded={"full"}
+                      isDisabled={isProcessing}
                       onClick={() => {
                         handleRemoveImage(index);
                       }}
@@ -420,9 +406,7 @@ export default function Home() {
         compressedImage={`/processed/${processId}/${
           processedImages.find(
             (img) =>
-              URL.createObjectURL(
-                images.find((origImg) => origImg.name === img.originalFilename)!
-              ) === previewImage
+              uploadedImagesRef.current[img.originalFilename] === previewImage
           )?.filename
         }`}
         originalImage={previewImage!}
