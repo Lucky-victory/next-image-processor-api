@@ -314,6 +314,7 @@ export default function Home() {
                   <Button
                     rounded={"full"}
                     colorScheme="red"
+                    width={{ base: "100%", md: "150px" }}
                     leftIcon={<LuTrash />}
                     onClick={() => {
                       setProcessedImages([]);

@@ -9,6 +9,7 @@ import {
   Image,
   Box,
   Flex,
+  Tag,
 } from "@chakra-ui/react";
 
 interface ImagePreviewModalProps {
@@ -57,7 +58,7 @@ const ImagePreviewModal: React.FC<ImagePreviewModalProps> = ({
   }, [sliderPosition]);
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} size="xl">
+    <Modal isOpen={isOpen} onClose={onClose} size={{ base: "full", md: "xl" }}>
       <ModalOverlay />
       <ModalContent>
         <ModalHeader>Image Comparison</ModalHeader>
@@ -72,31 +73,58 @@ const ImagePreviewModal: React.FC<ImagePreviewModalProps> = ({
             onMouseMove={handleMouseMove}
             onTouchMove={handleTouchMove}
           >
-            <Image
-              src={originalImage}
-              alt="Original"
-              position="absolute"
-              top="0"
-              left="0"
-              width="100%"
-              height="100%"
-              objectFit="contain"
-            />
             <Box
               position="absolute"
               top="0"
               left="0"
-              width={`${sliderPosition}%`}
+              width={`100%`}
               height="100%"
               overflow="hidden"
             >
+              <Tag rounded={"full"} colorScheme="gray" fontWeight={600}>
+                Before
+              </Tag>
               <Image
-                src={compressedImage}
-                alt="Compressed"
+                src={originalImage}
+                alt="Original"
                 position="absolute"
                 top="0"
                 left="0"
-                width={`${100 / (sliderPosition / 100)}%`}
+                width="100%"
+                height="100%"
+                objectFit="contain"
+                pointerEvents={"none"}
+              />
+            </Box>
+            <Box
+              position="absolute"
+              top="0"
+              left="0"
+              width={`100%`}
+              height="100%"
+              overflow="hidden"
+              clipPath={`inset(0 0 0 ${sliderPosition}%)`}
+              transition="clip-path 0.1s ease-out"
+              zIndex={500}
+              bg={"white"}
+            >
+              <Tag
+                pos={"absolute"}
+                right={0}
+                rounded={"full"}
+                colorScheme="green"
+                fontWeight={600}
+              >
+                After
+              </Tag>
+              <Image
+                src={compressedImage}
+                alt="Compressed"
+                pointerEvents={"none"}
+                position="absolute"
+                top="0"
+                left="0"
+                width={`100%`}
                 height="100%"
                 objectFit="contain"
               />
@@ -110,9 +138,10 @@ const ImagePreviewModal: React.FC<ImagePreviewModalProps> = ({
               alignItems="center"
               justifyContent="center"
               cursor="ew-resize"
+              zIndex={501}
             >
               <Box
-                width="4px"
+                width="3px"
                 height="100%"
                 bg="white"
                 boxShadow="0 0 5px rgba(0, 0, 0, 0.5)"
