@@ -34,6 +34,7 @@ import {
   ModalBody,
   useDisclosure,
   Icon,
+  Select,
 } from "@chakra-ui/react";
 import {
   LuArrowBigRight,
@@ -73,21 +74,20 @@ const BackgroundBlob = ({
 );
 
 export default function Home() {
-  const [images, setImages] = useState<File[]>([]);
-  const [quality, setQuality] = useState<number>(70);
-  const [width, setWidth] = useState<string>("");
-  const [height, setHeight] = useState<string>("");
-  const [processedImages, setProcessedImages] = useState<any[]>([]);
+  const [videos, setVideos] = useState<File[]>([]);
+  const [quality, setQuality] = useState<number>(23);
+  const [format, setFormat] = useState<string>("mp4");
+  const [processedVideos, setProcessedVideos] = useState<any[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<{
     [key: string]: number;
   }>({});
-  const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [previewVideo, setPreviewVideo] = useState<string | null>(null);
   const { isOpen, onOpen, onClose } = useDisclosure();
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
-    setImages((prevImages) => [...prevImages, ...acceptedFiles]);
+    setVideos((prevVideos) => [...prevVideos, ...acceptedFiles]);
     acceptedFiles.forEach((file) => {
       setUploadProgress((prev) => ({ ...prev, [file.name]: 0 }));
     });
@@ -97,21 +97,21 @@ export default function Home() {
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (images.length === 0) {
-      setError("Please select at least one image");
+    if (videos.length === 0) {
+      setError("Please select at least one video");
       return;
     }
 
     setIsProcessing(true);
 
     const formData = new FormData();
-    images.forEach((image, index) => {
-      formData.append(`image`, image);
+    videos.forEach((video) => {
+      formData.append(`video`, video);
     });
 
     try {
       const response = await axios.post(
-        `/api/image-processor?q=${quality}&w=${width}&h=${height}`,
+        `/api/video-compressor?q=${quality}&f=${format}`,
         formData,
         {
           headers: {
@@ -124,7 +124,7 @@ export default function Home() {
               );
               setUploadProgress((prev) => ({
                 ...prev,
-                [images[progressEvent.loaded % images.length].name]: progress,
+                [videos[progressEvent.loaded % videos.length].name]: progress,
               }));
             }
           },
@@ -132,37 +132,37 @@ export default function Home() {
       );
 
       if (response.status !== 200) {
-        throw new Error("Failed to process images");
+        throw new Error("Failed to process videos");
       }
 
       const result = await response.data;
-      setProcessedImages(result.images);
+      setProcessedVideos(result.videos);
       setError(null);
     } catch (err) {
-      setError("Error processing images");
+      setError("Error processing videos");
       console.error(err);
     } finally {
       setIsProcessing(false);
     }
   };
 
-  const handleDownload = (image: any) => {
+  const handleDownload = (video: any) => {
     const link = document.createElement("a");
-    link.href = `/processed/${image.filename}`;
-    link.download = image.filename;
+    link.href = `/processed/${video.filename}`;
+    link.download = video.filename;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
   };
 
   const handleDownloadAll = () => {
-    processedImages.forEach((image) => {
-      handleDownload(image);
+    processedVideos.forEach((video) => {
+      handleDownload(video);
     });
   };
 
-  const handlePreview = (image: any) => {
-    setPreviewImage(`/processed/${image.filename}`);
+  const handlePreview = (video: any) => {
+    setPreviewVideo(`/processed/${video.filename}`);
     onOpen();
   };
 
@@ -185,7 +185,7 @@ export default function Home() {
                 p={2}
               >
                 <Text fontSize="3xl" fontWeight="bold" color={"teal"}>
-                  Image Compressor
+                  Video Compressor
                 </Text>
                 <Box
                   position="absolute"
@@ -230,8 +230,8 @@ export default function Home() {
               </Box>
             </Heading>
             <Text>
-              Compress images with one click, reduce image size{" "}
-              <Text as={"strong"}>without losing image quality</Text>
+              Compress videos with one click, reduce video size{" "}
+              <Text as={"strong"}>without losing video quality</Text>
             </Text>
             <Stack
               {...getRootProps()}
@@ -270,10 +270,10 @@ export default function Home() {
                         bgGradient: "linear(to-r, blue.500, purple.600)",
                       }}
                     >
-                      Upload Image
+                      Upload Video
                     </Button>
                   </motion.div>
-                  <Text>or drop some images</Text>
+                  <Text>or drop some videos</Text>
                 </VStack>
               )}
             </Stack>
@@ -289,36 +289,12 @@ export default function Home() {
               >
                 <Stack direction={{ base: "column", md: "row" }} spacing={4}>
                   <FormControl>
-                    <FormLabel>Width</FormLabel>
-                    <InputGroup>
-                      <Input
-                        type="number"
-                        value={width}
-                        onChange={(e) => setWidth(e.target.value)}
-                        placeholder="Width"
-                      />
-                      <InputRightAddon>px</InputRightAddon>
-                    </InputGroup>
-                  </FormControl>
-                  <FormControl>
-                    <FormLabel>Height</FormLabel>
-                    <InputGroup>
-                      <Input
-                        type="number"
-                        value={height}
-                        onChange={(e) => setHeight(e.target.value)}
-                        placeholder="Height"
-                      />
-                      <InputRightAddon>px</InputRightAddon>
-                    </InputGroup>
-                  </FormControl>
-                  <FormControl>
-                    <FormLabel>Quality</FormLabel>
+                    <FormLabel>Quality (CRF)</FormLabel>
                     <Slider
                       value={quality}
                       onChange={(value) => setQuality(value)}
-                      min={1}
-                      max={100}
+                      min={0}
+                      max={51}
                       width="100%"
                     >
                       <SliderTrack>
@@ -326,7 +302,18 @@ export default function Home() {
                       </SliderTrack>
                       <SliderThumb />
                     </Slider>
-                    <Text textAlign="center">{quality}%</Text>
+                    <Text textAlign="center">{quality}</Text>
+                  </FormControl>
+                  <FormControl>
+                    <FormLabel>Format</FormLabel>
+                    <Select
+                      value={format}
+                      onChange={(e) => setFormat(e.target.value)}
+                    >
+                      <option value="mp4">MP4</option>
+                      <option value="webm">WebM</option>
+                      <option value="avi">AVI</option>
+                    </Select>
                   </FormControl>
                 </Stack>
                 <Button
@@ -336,13 +323,13 @@ export default function Home() {
                   rounded={"full"}
                   isLoading={isProcessing}
                   width={{ base: "100%", md: "200px" }}
-                  isDisabled={images.length === 0}
+                  isDisabled={videos.length === 0}
                 >
                   Compress
                 </Button>
               </VStack>
             </form>
-            {processedImages.length > 0 && (
+            {processedVideos.length > 0 && (
               <VStack
                 spacing={4}
                 align="stretch"
@@ -364,7 +351,7 @@ export default function Home() {
                 >
                   Download All
                 </Button>
-                {processedImages.map((image, index) => (
+                {processedVideos.map((video, index) => (
                   <HStack
                     w={"full"}
                     key={index}
@@ -376,14 +363,7 @@ export default function Home() {
                     flexWrap={{ base: "wrap", md: "nowrap" }}
                   >
                     <HStack>
-                      <Image
-                        src={"/processed/" + image.filename}
-                        alt={`Thumbnail ${index + 1}`}
-                        objectFit="cover"
-                        boxSize="50px"
-                        borderRadius="md"
-                      />
-                      <Text as={"span"}>{image.filename}</Text>
+                      <Text as={"span"}>{video.filename}</Text>
                     </HStack>
                     <HStack gap={1}>
                       <Tag
@@ -392,7 +372,7 @@ export default function Home() {
                         size={{ base: "sm", lg: "md" }}
                       >
                         <Text as="s">
-                          {(image.originalSize / 1024).toFixed(2)} KB
+                          {(video.originalSize / 1024 / 1024).toFixed(2)} MB
                         </Text>
                       </Tag>{" "}
                       <LuArrowBigRight size={14} />{" "}
@@ -401,12 +381,12 @@ export default function Home() {
                         rounded={"full"}
                         size={{ base: "sm", lg: "md" }}
                       >
-                        {(image.newSize / 1024).toFixed(2)} KB
+                        {(video.newSize / 1024 / 1024).toFixed(2)} MB
                       </Tag>
                     </HStack>
                     <HStack>
                       <Button
-                        onClick={() => handleDownload(image)}
+                        onClick={() => handleDownload(video)}
                         size="sm"
                         colorScheme="blue"
                         rounded={"full"}
@@ -414,7 +394,7 @@ export default function Home() {
                         Download
                       </Button>
                       <Button
-                        onClick={() => handlePreview(image)}
+                        onClick={() => handlePreview(video)}
                         size="sm"
                         colorScheme="teal"
                         rounded={"full"}
@@ -427,7 +407,7 @@ export default function Home() {
               </VStack>
             )}
 
-            {images.length > 0 && !processedImages.length && (
+            {videos.length > 0 && !processedVideos.length && (
               <VStack
                 spacing={4}
                 w="full"
@@ -437,7 +417,7 @@ export default function Home() {
                 rounded={"xl"}
                 maxW={800}
               >
-                {images.map((image, index) => (
+                {videos.map((video, index) => (
                   <HStack
                     key={index}
                     w="full"
@@ -446,27 +426,20 @@ export default function Home() {
                     bg="gray.100"
                     borderRadius="lg"
                   >
-                    <Image
-                      src={URL.createObjectURL(image)}
-                      alt={`Thumbnail ${index + 1}`}
-                      objectFit="cover"
-                      boxSize="50px"
-                      borderRadius="md"
-                    />
                     <Text flex={1} isTruncated>
-                      {image.name}
+                      {video.name}
                     </Text>
                     <CircularProgress
-                      value={uploadProgress[image.name] || 0}
+                      value={uploadProgress[video.name] || 0}
                       size="40px"
                       color="blue.500"
                     >
                       <CircularProgressLabel>
-                        {uploadProgress[image.name] > 0 &&
-                          uploadProgress[image.name] + "%"}
+                        {uploadProgress[video.name] > 0 &&
+                          uploadProgress[video.name] + "%"}
                       </CircularProgressLabel>
                     </CircularProgress>
-                    <Text>{(image.size / 1024).toFixed(2)} KB</Text>
+                    <Text>{(video.size / 1024 / 1024).toFixed(2)} MB</Text>
                   </HStack>
                 ))}
               </VStack>
@@ -477,17 +450,14 @@ export default function Home() {
       <Modal isOpen={isOpen} onClose={onClose} size="xl">
         <ModalOverlay />
         <ModalContent>
-          <ModalHeader>Image Preview</ModalHeader>
+          <ModalHeader>Video Preview</ModalHeader>
           <ModalCloseButton />
           <ModalBody>
-            {previewImage && (
-              <Image
-                src={previewImage}
-                alt="Preview"
-                maxW="100%"
-                maxH="70vh"
-                mx="auto"
-              />
+            {previewVideo && (
+              <video controls width="100%">
+                <source src={previewVideo} type={`video/${format}`} />
+                Your browser does not support the video tag.
+              </video>
             )}
           </ModalBody>
         </ModalContent>
