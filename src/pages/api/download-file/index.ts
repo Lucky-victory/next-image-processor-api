@@ -5,7 +5,6 @@ import { files } from "jszip";
 
 export default function handler(req: NextApiRequest, res: NextApiResponse) {
   const { filename, processId } = req.query;
-  console.log({ filename, processId });
   const filePath = path.join(
     process.cwd(),
     "public",
@@ -13,7 +12,6 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
     processId as string,
     filename as string
   ); // Path to the file
-  console.log({ filePath, filename, processId });
 
   const fileStat = fs.statSync(filePath);
 
