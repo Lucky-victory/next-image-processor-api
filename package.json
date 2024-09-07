@@ -13,6 +13,7 @@
     "@chakra-ui/react": "^2.8.2",
     "@emotion/react": "^11.13.3",
     "@emotion/styled": "^11.13.0",
+    "@vercel/blob": "^0.23.4",
     "axios": "^1.7.5",
     "file-saver": "^2.0.5",
     "fluent-ffmpeg": "^2.1.3",

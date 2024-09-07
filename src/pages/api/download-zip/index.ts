@@ -1,16 +1,7 @@
 import JSZip from "jszip";
 import { NextApiRequest, NextApiResponse } from "next";
-import fs from "fs";
-import path from "path";
-
-// Helper function to read files from a folder
-const getFilesInFolder = (folderPath: string) => {
-  const fullPath = path.join(process.cwd(), folderPath);
-  return fs.readdirSync(fullPath).map((fileName) => ({
-    name: fileName,
-    path: path.join(fullPath, fileName),
-  }));
-};
+import { list } from "@vercel/blob";
+import axios from "axios";
 
 export default async function handler(
   req: NextApiRequest,
@@ -18,25 +9,41 @@ export default async function handler(
 ) {
   const zip = new JSZip();
   const { id } = req.query;
-  if (!id) {
-    res.status(400).json({ error: "Missing id parameter" });
+
+  if (!id || typeof id !== "string") {
+    res.status(400).json({ error: "Missing or invalid id parameter" });
     return;
   }
-  const folderPath = path.join("public", "processed", id as string);
+
   try {
-    const files = getFilesInFolder(folderPath);
+    // List all blobs with the given id prefix
+    const { blobs } = await list({
+      prefix: `${id}/compressed`,
+      mode: "folded",
+    });
+    console.log({ blobs });
+
+    if (blobs.length === 0) {
+      res.status(404).json({ error: "No files found for the given id" });
+      return;
+    }
 
     // Add each file to the ZIP archive
-    files.forEach((file) => {
-      const fileContent = fs.readFileSync(file.path);
-      zip.file(file.name, fileContent); // Add the file as binary data
-    });
+    await Promise.all(
+      blobs.map(async (blob) => {
+        const response = await axios.get(blob.url, {
+          responseType: "arraybuffer",
+        });
+        zip.file(blob.pathname.split("/")[1], response.data);
+      })
+    );
 
     const content = await zip.generateAsync({ type: "nodebuffer" });
     res.setHeader("Content-Type", "application/zip");
     res.setHeader("Content-Disposition", `attachment; filename='${id}.zip'`);
     res.status(200).send(content);
   } catch (error: any) {
+    console.error("Error creating ZIP file:", error);
     res
       .status(500)
       .json({ error: "Failed to create ZIP file", details: error.message });

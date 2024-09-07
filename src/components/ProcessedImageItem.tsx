@@ -9,6 +9,7 @@ export interface ProcessedImageItemProps {
     format: string;
     newSize: number;
     originalSize: number;
+    url: string;
   };
   index: number;
   processId: string;
@@ -17,6 +18,7 @@ export interface ProcessedImageItemProps {
     format: string;
     newSize: number;
     originalSize: number;
+    url: string;
   }) => void;
 }
 const ProcessedImageItem: React.FC<ProcessedImageItemProps> = ({
@@ -38,7 +40,7 @@ const ProcessedImageItem: React.FC<ProcessedImageItemProps> = ({
     >
       <HStack>
         <Image
-          src={`/processed/${processId}/${image.filename}`}
+          src={`${image.url}`}
           alt={`Thumbnail ${index + 1}`}
           objectFit="cover"
           boxSize="50px"

@@ -33,6 +33,7 @@ import ProcessedImageItem from "@/components/ProcessedImageItem";
 import ImagePreviewModal from "@/components/ImagePreviewModal";
 import BackgroundBlob from "@/components/BackgroundBlob";
 import PageHeading from "@/components/PageHeading";
+import { useDeleteFolder } from "@/hooks";
 
 export default function Home() {
   const [images, setImages] = useState<File[]>([]);
@@ -47,6 +48,8 @@ export default function Home() {
   const [uploadProgress, setUploadProgress] = useState<{
     [key: string]: number;
   }>({});
+  const { deleteFolder } = useDeleteFolder();
+
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const { isOpen, onOpen, onClose } = useDisclosure();
   const uploadedImagesRef = useRef<{ [key: string]: string }>({});
@@ -135,6 +138,18 @@ export default function Home() {
     }
   };
 
+  function reset() {
+    setImages([]);
+    setQuality(50);
+    setWidth("");
+    setHeight("");
+    setProcessedImages([]);
+    setError(null);
+    setIsProcessing(false);
+    setUploadProgress({});
+    setPreviewImage(null);
+    setProcessId("");
+  }
   const handleRemoveImage = (index: number) => {
     const removedImage = images[index];
     setImages((prevImages) => prevImages.filter((_, i) => i !== index));
@@ -152,7 +167,7 @@ export default function Home() {
     if (originalImage) {
       setPreviewImage(originalImage);
     } else {
-      setPreviewImage(`/processed/${processId}/${image.filename}`);
+      setPreviewImage(`${image.url}`);
     }
     onOpen();
   };
@@ -220,11 +235,23 @@ export default function Home() {
                     color={"gray.600"}
                     fontWeight={500}
                   >
-                    (max 50MB)
+                    (max 4MB)
                   </Text>
                 </VStack>
               )}
             </Stack>
+            {error && (
+              <Text color="red.500" textAlign="center" fontWeight="bold">
+                {error}
+              </Text>
+            )}
+            <Button
+              onClick={async () => {
+                await deleteFolder("71602de7-5e64-4fe0-859d-3e22e312b10b");
+              }}
+            >
+              drop folder
+            </Button>
             {!processedImages.length && (
               <form onSubmit={handleSubmit} style={{ width: "100%" }}>
                 <VStack
@@ -316,7 +343,7 @@ export default function Home() {
                     width={{ base: "100%", md: "150px" }}
                     leftIcon={<LuTrash />}
                     onClick={() => {
-                      setProcessedImages([]);
+                      reset();
                     }}
                   >
                     Reset{" "}
@@ -403,11 +430,11 @@ export default function Home() {
       <ImagePreviewModal
         isOpen={isOpen}
         onClose={onClose}
-        compressedImage={`/processed/${processId}/${
+        compressedImage={`${
           processedImages.find(
             (img) =>
               uploadedImagesRef.current[img.originalFilename] === previewImage
-          )?.filename
+          )?.url
         }`}
         originalImage={previewImage!}
       />

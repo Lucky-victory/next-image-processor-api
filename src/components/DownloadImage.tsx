@@ -21,7 +21,9 @@ const DownloadImage: React.FC<{
           responseType: "blob",
         }
       );
-      const blob = new Blob([response.data], { type: "image/jpeg" });
+      const blob = new Blob([response.data], {
+        type: response.headers["Content-Type"]?.toString() || "image/jpeg",
+      });
       saveAs(blob, `${filename}`);
       onSuccess();
       setIsLoading(false);

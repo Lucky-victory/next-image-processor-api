@@ -1,8 +1,7 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import formidable from "formidable";
 import sharp from "sharp";
-import fs from "fs/promises";
-import path from "path";
+import { put } from "@vercel/blob";
 import { v4 as uuid } from "uuid";
 
 export const config = {
@@ -18,17 +17,18 @@ interface ProcessedImage {
   format: string;
   originalSize: number;
   newSize: number;
+  url: string;
 }
 
 const processImage = async (
+  processId: string,
   file: formidable.File,
   format: string,
   quality: number,
   width: number | undefined,
-  height: number | undefined,
-  outputDir: string
+  height: number | undefined
 ): Promise<ProcessedImage> => {
-  const imageBuffer = await fs.readFile(file.filepath);
+  const imageBuffer = await sharp(file.filepath).toBuffer();
   const originalSize = imageBuffer.length;
   let sharpImage = sharp(imageBuffer);
 
@@ -50,14 +50,19 @@ const processImage = async (
     default:
       throw new Error("Unsupported format");
   }
+
   const outputFilename = `compressed-${file.originalFilename?.replace(
     /\.[^/.]+$/,
     ""
   )}.${format}`;
-  const outputPath = path.join(outputDir, outputFilename);
-  await sharpImage.toFile(outputPath);
 
-  const newSize = (await fs.stat(outputPath)).size;
+  const processedBuffer = await sharpImage.toBuffer();
+  const newSize = processedBuffer.length;
+
+  const blob = await put(processId + "/" + outputFilename, processedBuffer, {
+    access: "public",
+    contentType: `image/${format}`,
+  });
 
   return {
     filename: outputFilename,
@@ -65,6 +70,7 @@ const processImage = async (
     format,
     originalSize,
     newSize,
+    url: blob.url,
   };
 };
 
@@ -97,15 +103,10 @@ export default async function handler(
     const height = h ? parseInt(h) : undefined;
 
     const id = uuid();
-    const processedDir = path.join(process.cwd(), "public", "processed");
-    const outputDir = path.join(processedDir, id);
-
-    // Create the 'processed' directory and the id-based subdirectory if they don't exist
-    await fs.mkdir(outputDir, { recursive: true });
 
     const processedImages = await Promise.all(
       imageFiles.map((file) =>
-        processImage(file, format, quality, width, height, outputDir)
+        processImage(id, file, format, quality, width, height)
       )
     );
 

@@ -1,28 +1,59 @@
 import { NextApiRequest, NextApiResponse } from "next";
-import path from "path";
-import fs from "fs";
+import { list, type ListBlobResultBlob } from "@vercel/blob";
+import axios from "axios";
 
-export default function handler(req: NextApiRequest, res: NextApiResponse) {
+async function fetchImageUrl(
+  processId: string,
+  filename: string
+): Promise<ListBlobResultBlob | undefined | null> {
+  const { blobs } = await list({
+    prefix: `${processId}/${filename?.replace(/\.[^/.]+$/, "")}`,
+    mode: "folded",
+  });
+  console.log({ blobs });
+  if (!blobs.length) return null;
+  const image = blobs.find((blob) => blob.pathname.split("/")[1] === filename);
+  return image;
+}
+
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse
+) {
   const { filename, processId } = req.query;
-  if (!filename || !processId) {
-    return res
-      .status(400)
-      .json({ error: "Missing filename or processId query parameters" });
+
+  if (
+    !filename ||
+    !processId ||
+    typeof filename !== "string" ||
+    typeof processId !== "string"
+  ) {
+    return res.status(400).json({
+      error: "Missing or invalid filename or processId query parameters",
+    });
   }
-  const filePath = path.join(
-    process.cwd(),
-    "public",
-    "processed",
-    processId as string,
-    filename as string
-  );
 
-  const fileStat = fs.statSync(filePath);
+  try {
+    const image = await fetchImageUrl(processId, filename);
 
-  res.setHeader("Content-Type", "image/jpeg");
-  res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
-  res.setHeader("Content-Length", fileStat.size);
+    if (!image) {
+      return res.status(404).json({ error: "File not found" });
+    }
 
-  const fileStream = fs.createReadStream(filePath);
-  fileStream.pipe(res);
+    const response = await axios.get(image.url, {
+      responseType: "arraybuffer",
+    });
+
+    res.setHeader(
+      "Content-Type",
+      response.headers["content-type"] || "image/jpeg"
+    );
+    res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+    res.setHeader("Content-Length", response.data.length);
+
+    res.status(200).send(response.data);
+  } catch (error) {
+    console.error("Error serving file:", error);
+    res.status(500).json({ error: "Failed to serve file" });
+  }
 }
