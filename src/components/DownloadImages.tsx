@@ -19,7 +19,7 @@ const DownloadImages: React.FC<{ id: string; onSuccess?: () => void }> = ({
       });
       const blob = new Blob([response.data], { type: "application/zip" });
       saveAs(blob, `${id}.zip`);
-      //   await deleteFolder(id);
+      await deleteFolder(id);
       onSuccess();
       setIsLoading(false);
     } catch (error) {
