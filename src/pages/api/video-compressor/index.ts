@@ -8,8 +8,8 @@ import ffmpeg from "fluent-ffmpeg";
 export const config = {
   api: {
     bodyParser: false,
-    size: 300 * 1024 * 1024, // 50MB
   },
+  maxDuration: 20,
 };
 
 interface ProcessedVideo {
