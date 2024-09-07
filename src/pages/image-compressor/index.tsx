@@ -48,7 +48,6 @@ export default function Home() {
   const [uploadProgress, setUploadProgress] = useState<{
     [key: string]: number;
   }>({});
-  const { deleteFolder } = useDeleteFolder();
 
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const { isOpen, onOpen, onClose } = useDisclosure();
@@ -245,13 +244,7 @@ export default function Home() {
                 {error}
               </Text>
             )}
-            <Button
-              onClick={async () => {
-                await deleteFolder("71602de7-5e64-4fe0-859d-3e22e312b10b");
-              }}
-            >
-              drop folder
-            </Button>
+
             {!processedImages.length && (
               <form onSubmit={handleSubmit} style={{ width: "100%" }}>
                 <VStack
