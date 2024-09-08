@@ -60,7 +60,7 @@ const ImagePreviewModal: React.FC<ImagePreviewModalProps> = ({
   return (
     <Modal isOpen={isOpen} onClose={onClose} size={{ base: "full", md: "xl" }}>
       <ModalOverlay />
-      <ModalContent>
+      <ModalContent rounded={"24px"}>
         <ModalHeader>Image Comparison</ModalHeader>
         <ModalCloseButton />
         <ModalBody>

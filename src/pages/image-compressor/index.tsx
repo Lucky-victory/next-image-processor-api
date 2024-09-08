@@ -37,6 +37,7 @@ import { useDeleteFolder } from "@/hooks";
 
 const API_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}/image-compressor`;
 export default function Home() {
+  const { deleteFolder } = useDeleteFolder();
   const [images, setImages] = useState<File[]>([]);
   const [processId, setProcessId] = useState("");
   const [quality, setQuality] = useState<number>(50);
@@ -138,7 +139,7 @@ export default function Home() {
     }
   };
 
-  function reset() {
+  async function reset() {
     setImages([]);
     setQuality(50);
     setWidth("");
@@ -148,6 +149,10 @@ export default function Home() {
     setIsProcessing(false);
     setUploadProgress({});
     setPreviewImage(null);
+    if (processId) {
+      await deleteFolder(processId);
+      setProcessId("");
+    }
     setProcessId("");
   }
   const handleRemoveImage = (index: number) => {
@@ -233,9 +238,9 @@ export default function Home() {
                     as={"span"}
                     fontSize={"small"}
                     color={"gray.600"}
-                    fontWeight={500}
+                    fontWeight={600}
                   >
-                    (max 4MB)
+                    (max 50MB)
                   </Text>
                 </VStack>
               )}
