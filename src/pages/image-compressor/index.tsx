@@ -180,18 +180,33 @@ export default function Home() {
 
   return (
     <>
-    <Head>
-      <title>Image Compressor - Free Online</title>
-      <meta name="description" content="Compress images with one click, reduce image size without losing image quality." />
-      <link rel="icon" href="/favicon.ico" />
-      <meta property="og:title" content="Image Compressor - Free Online" />
-      <meta property="og:description" content="Compress images with one click, reduce image size without losing image quality." />
-      <meta property="og:image" content="/og-image.png" />
-      <meta property="og:url" content="https://image-tools-wine.vercel.app/" />
-      <meta property="og:type" content="website" />
-      <meta name="twitter:card" content="summary_large_image" />
-      <meta name="twitter:title" content="Image Compressor - Free Online" />
-      <meta name="twitter:description" content="Compress images with one click, reduce image size without losing image quality." /> 
+      <Head>
+        <title>Image Compressor - Free Online</title>
+        <meta
+          name="description"
+          content="Compress images with one click, reduce image size without losing image quality."
+        />
+        <link rel="icon" href="/favicon.ico" />
+        <meta property="og:title" content="Image Compressor - Free Online" />
+        <meta
+          property="og:description"
+          content="Compress images with one click, reduce image size without losing image quality."
+        />
+        <meta
+          property="og:image"
+          content="https://image-tools-wine.vercel.app/og-image.png"
+        />
+        <meta
+          property="og:url"
+          content="https://image-tools-wine.vercel.app/"
+        />
+        <meta property="og:type" content="website" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="Image Compressor - Free Online" />
+        <meta
+          name="twitter:description"
+          content="Compress images with one click, reduce image size without losing image quality."
+        />
       </Head>
       <PageWrapper>
         <Box position="relative" minHeight="100vh" overflow="hidden">
