@@ -81,13 +81,22 @@ const ImagePreviewModal: React.FC<ImagePreviewModalProps> = ({
               height="100%"
               overflow="hidden"
             >
-              <Tag rounded={"full"} colorScheme="gray" fontWeight={600}>
+              <Tag
+                top={2}
+                left={2}
+                pos={"absolute"}
+                size={{ base: "sm", md: "lg" }}
+                rounded={"full"}
+                colorScheme="gray"
+                fontWeight={600}
+              >
                 Before
               </Tag>
               <Image
                 src={originalImage}
                 alt="Original"
                 position="absolute"
+                zIndex={-1}
                 top="0"
                 left="0"
                 width="100%"
@@ -110,10 +119,13 @@ const ImagePreviewModal: React.FC<ImagePreviewModalProps> = ({
             >
               <Tag
                 pos={"absolute"}
-                right={0}
+                right={2}
+                top={2}
+                size={{ base: "sm", md: "lg" }}
                 rounded={"full"}
                 colorScheme="green"
                 fontWeight={600}
+                zIndex={2}
               >
                 After
               </Tag>

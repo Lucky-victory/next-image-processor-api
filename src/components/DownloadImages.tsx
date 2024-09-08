@@ -4,6 +4,7 @@ import axios from "axios";
 import { saveAs } from "file-saver";
 import { useState } from "react";
 import { LuDownload } from "react-icons/lu";
+const API_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}/image-compressor/download-zip`;
 
 const DownloadImages: React.FC<{ id: string; onSuccess?: () => void }> = ({
   id,
@@ -14,7 +15,7 @@ const DownloadImages: React.FC<{ id: string; onSuccess?: () => void }> = ({
   const handleDownload = async () => {
     try {
       setIsLoading(true);
-      const response = await axios.get(`/api/download-zip?id=${id}`, {
+      const response = await axios.get(`${API_URL}?id=${id}`, {
         responseType: "blob", // important for downloading binary data
       });
       const blob = new Blob([response.data], { type: "application/zip" });

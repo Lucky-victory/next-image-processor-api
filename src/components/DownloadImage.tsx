@@ -3,6 +3,7 @@ import axios from "axios";
 import { saveAs } from "file-saver";
 import { useState } from "react";
 import { LuDownload } from "react-icons/lu";
+const API_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}/image-compressor/download-file`;
 
 const DownloadImage: React.FC<{
   id: string;
@@ -14,9 +15,7 @@ const DownloadImage: React.FC<{
     try {
       setIsLoading(true);
       const response = await axios.get(
-        `/api/download-file?processId=${id}&filename=${encodeURIComponent(
-          filename
-        )}`,
+        `${API_URL}?processId=${id}&filename=${encodeURIComponent(filename)}`,
         {
           responseType: "blob",
         }

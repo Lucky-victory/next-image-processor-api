@@ -21,7 +21,6 @@ export default async function handler(
       prefix: `${id}/compressed`,
       mode: "folded",
     });
-    console.log({ blobs });
 
     if (blobs.length === 0) {
       res.status(404).json({ error: "No files found for the given id" });

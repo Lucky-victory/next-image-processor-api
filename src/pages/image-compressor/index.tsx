@@ -35,6 +35,7 @@ import BackgroundBlob from "@/components/BackgroundBlob";
 import PageHeading from "@/components/PageHeading";
 import { useDeleteFolder } from "@/hooks";
 
+const API_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}/image-compressor`;
 export default function Home() {
   const [images, setImages] = useState<File[]>([]);
   const [processId, setProcessId] = useState("");
@@ -100,7 +101,7 @@ export default function Home() {
 
     try {
       const response = await axios.post(
-        `/api/image-processor?q=${quality}&w=${width}&h=${height}`,
+        `${API_URL}?q=${quality}&w=${width}&h=${height}`,
         formData,
         {
           headers: {

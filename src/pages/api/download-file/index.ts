@@ -10,7 +10,7 @@ async function fetchImageUrl(
     prefix: `${processId}/${filename?.replace(/\.[^/.]+$/, "")}`,
     mode: "folded",
   });
-  console.log({ blobs });
+
   if (!blobs.length) return null;
   const image = blobs.find((blob) => blob.pathname.split("/")[1] === filename);
   return image;
