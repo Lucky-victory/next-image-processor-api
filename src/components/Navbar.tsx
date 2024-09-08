@@ -16,7 +16,6 @@ const Navbar: React.FC = () => {
     { path: "/image-compressor", label: "Image Compressor" },
     { path: "/image-resizer", label: "Image Resizer" },
     { path: "/background-remover", label: "Background Remover" },
-    { path: "/video-compressor", label: "Video Compressor" },
   ];
 
   const bgColor = useColorModeValue("white", "gray.800");
