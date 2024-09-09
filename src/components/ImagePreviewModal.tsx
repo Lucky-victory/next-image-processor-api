@@ -58,7 +58,14 @@ const ImagePreviewModal: React.FC<ImagePreviewModalProps> = ({
   }, [sliderPosition]);
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} size={{ base: "full", md: "xl" }}>
+    <Modal
+      isOpen={isOpen}
+      onClose={() => {
+        onClose();
+        setSliderPosition(50);
+      }}
+      size={{ base: "full", md: "xl" }}
+    >
       <ModalOverlay />
       <ModalContent rounded={"24px"}>
         <ModalHeader>Image Comparison</ModalHeader>

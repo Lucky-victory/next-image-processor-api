@@ -221,7 +221,10 @@ export default function Home() {
           <BackgroundBlob top="80%" left="20%" size="350px" color="pink.300" />
           <Container maxW="container.xl" py={8} position="relative" zIndex={1}>
             <VStack spacing={8}>
-              <PageHeading title="Free online" />
+              <PageHeading
+                title="Free online Image"
+                boxTitle="Compressor and Resizer"
+              />
               <Text>
                 Compress images with one click, reduce image size{" "}
                 <Text as={"strong"}>without losing image quality</Text>
